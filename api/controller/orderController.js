@@ -9,8 +9,6 @@ class orderController extends BaseClass {
   }
 
   async generateOrder(ctx) {
-    ctx.session = {userId: '13767477350'}
-    console.log(ctx.session.userId)
     let {addressId, goods} = ctx.request.body
     if (!addressId || !goods || !goods.length) {
       ctx.body = {status: -1, message: '下订单失败，参数有误'}
@@ -24,7 +22,7 @@ class orderController extends BaseClass {
 
       promiseArr.push(this.computeTotalPrice(goods))
       promiseArr.push(userAddressModel.findOne({_id: addressId}))
-      promiseArr.push(userModel.findOne({userName: /* ctx.session.userId */ '13767477350'}))
+      promiseArr.push(userModel.findOne({userName: ctx.session.userId}))
       promiseArr.push(this.generateOrderID())
 
       let values = await Promise.all(promiseArr)
@@ -50,7 +48,6 @@ class orderController extends BaseClass {
   }
 
   async getOrderInfo(ctx) {
-    ctx.session = {userId: '13767477351'}
     const orderId = ctx.params.orderId
     if (!orderId) {
       ctx.body = {status: -1, message: '获取指定订单失败，参数有误'}

@@ -21,16 +21,13 @@
     "koa-onerror": "^1.2.1",
     "koa-router": "^7.4.0",
     "koa-session": "^5.8.3",
-    "koa-session-minimal": "^3.0.4",
-    "koa-session-mongoose": "^2.0.5",
-    "koa-session2": "^2.2.7",
-    "koa-session2-mongo": "0.0.1",
     "koa-static": "^3.0.0",
     "koa-views": "^5.2.1",
     "koa2-cors": "^2.0.5",
     "mongoose": "^5.1.5",
     "node-fetch": "^2.2.0",
-    "pug": "^2.0.0-rc.1"
+    "pug": "^2.0.0-rc.1",
+    "qcloudsms_js": "^0.1.1"
   },
   "devDependencies": {
     "nodemon": "^1.8.1"

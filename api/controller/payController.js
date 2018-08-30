@@ -30,7 +30,7 @@ class payController extends BaseClass {
         pay.remove()
       }
 
-      let payUserId = /* ctx.session.userId */ '13767477350'
+      let payUserId = ctx.session.userId
       let payData = {
         amount: '1', // 免单,最低支付1分
         tradeName: '吼吼订单支付', // 商户自定义订单标题

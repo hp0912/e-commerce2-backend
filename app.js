@@ -1,8 +1,6 @@
 const Koa = require('koa')
-// const session = require("koa-session2")
-// const MongoStore = require("koa-session2-mongo")
 const session = require('koa-session')
-const MongooseStore = require('koa-session-mongoose')
+const mongoose = require('mongoose')
 const views = require('koa-views')
 const json = require('koa-json')
 const onerror = require('koa-onerror')
@@ -44,10 +42,25 @@ let SESSIONCONFIG = {
   signed: true,
   rolling: false,
   renew: true,
-  store: new MongooseStore({
-    collection: 'appSessions',
-    expires: 2 * 60 * 60
-  })
+  store: {
+    async destroy (id) {
+      const sessionModel = mongoose.model('Sessions')
+      return sessionModel.remove({ _id: id })
+    },
+    async get (id) {
+      const sessionModel = mongoose.model('Sessions')
+      const { data } = await sessionModel.findById(id)
+      return data
+    },
+    async set (id, data, maxAge, { changed, rolling }) {
+      if (changed || rolling) {
+        const sessionModel = mongoose.model('Sessions')
+        const record = { _id: id, data, updatedAt: new Date() }
+        await sessionModel.findByIdAndUpdate(id, record, { upsert: true, safe: true })
+      }
+      return data
+    }
+  }
 }
 
 app.use(session(SESSIONCONFIG, app))

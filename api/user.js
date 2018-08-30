@@ -1,19 +1,39 @@
 const Router = require ('koa-router')
 const mongoose = require('mongoose')
 const CaptchaSDK = require('dx-captcha-sdk')
+const QcloudSms = require("qcloudsms_js")
 const config = require('../config')
+const authController = require('./controller/authController')
 
 let router = new Router()
 const sdk = new CaptchaSDK(config.dxAppID, config.dxAppSecret)
 
-router.get('/',async(ctx)=>{
-  ctx.body = "这是用户操作首页"
-})
-
 router.post('/sentVerificationCode',async(ctx)=>{
-  // const User = mongoose.model('User')
-  // let newUser = new User(ctx.request.body)
-  
+  let appid = 1400009099
+  let appkey = "9ff91d87c2cd7cd0ea762f141975d1df37481d48700d70ac37470aefc60f9bad"
+  let phoneNumbers = [ctx.request.body.tel]
+  let templateId = 7839
+  let smsSign = "腾讯云"
+  let sms = QcloudSms(appid, appkey)
+  let verificationCode = (Math.random() + '').substr(2, 6)
+  let ssender = sms.SmsSingleSender()
+  let params = [verificationCode]
+
+  if (!ctx.request.body.tel.match(/^[1][34578]\d{9}$/)) {
+    ctx.body = {code:500, message: '请输入正确的手机号'}
+    return
+  }
+
+  ssender.sendWithParam(86, phoneNumbers[0], templateId, params, smsSign, "", "", function(err, res, resData){
+    if (err) {
+      console.log("err: ", err.message, ctx.request.body.tel)
+    } else {
+      console.log("发送验证码成功", ctx.request.body.tel)
+    }
+  })
+  ctx.session.verificationCode = verificationCode + '-' + ctx.request.body.tel
+  console.log('验证码:', verificationCode)
+
   ctx.body={
     code:200,
     message:'发送成功'
@@ -22,19 +42,30 @@ router.post('/sentVerificationCode',async(ctx)=>{
 
 router.post('/register', async (ctx) => {
   const User = mongoose.model('User')
-  let newUser = new User(ctx.request.body)
+  let {userName, password, sms} = ctx.request.body
 
-  await newUser.save().then(() => {
-    ctx.body = {
-      code: 200,
-      message: '注册成功'
+  if (!userName.match(/^[1][34578]\d{9}$/)) {
+    ctx.body = {code:500, message: '请输入正确的手机号'}
+    return
+  }
+
+  try {
+    if ((sms + '-' + userName) === ctx.session.verificationCode) {
+      let _user = await User.findOne({userName: userName})
+      if (_user) {
+        ctx.body = {code: 500, message: '手机号已被注册'}
+      } else {
+        let newUser = new User({userName, password})
+        await newUser.save()
+        ctx.session.userId = userName
+        ctx.body = {code: 200, message: '注册成功'}
+      }
+    } else {
+      ctx.body = {code: 500, message: '验证码错误'}
     }
-  }).catch(error => {
-    ctx.body = {
-      code: 500,
-      message: error
-    }
-  })
+  } catch (error) {
+    ctx.body = {code: 500, message: error}
+  }
 })
 
 router.post('/login', async(ctx) => {
@@ -43,33 +74,42 @@ router.post('/login', async(ctx) => {
   let password = loginUser.password
   let token = loginUser.token
   const User = mongoose.model('User')
-  
-  await User.findOne({userName:userName}).exec().then(async(result) => {
-    if(result){
-      await sdk.verifyToken(token).then(() => {
-        let newUser = new User()  //因为是实例方法，所以要new出对象，才能调用
-        return newUser.comparePassword(password, result.password)
-        .then((isMatch) => {
-          ctx.body={ code:200, result: isMatch, message: isMatch ? '登录成功' : '用户名或密码错误'} 
-        })
-        .catch(error => {
-          ctx.body={ code:500, result: false, message: '内部服务器错误'}
-        })
-      }).catch(err => {
-        ctx.body={ code: 500, result: false, message: '登录验证失败'}
-      })
-    }else{
-        ctx.body={ code:200, result: false, message: '用户名或密码错误'}
+
+  if (!userName.match(/^[1][34578]\d{9}$/)) {
+    ctx.body = {code:500, message: '请输入正确的手机号'}
+    return
+  }
+
+  try {
+    let dxResult = await sdk.verifyToken(token)
+    if (dxResult.result) {
+      console.log('登录验证成功:', userName)
+      let _user = await User.findOne({userName:userName})
+
+      if (_user) {
+        let newUser = new User()
+        let isMatch = newUser.comparePassword(password, _user.password)
+        if (isMatch) {
+          ctx.session.userId = userName
+          ctx.body = { code:200, result: true, message: '登录成功'}
+        } else {
+          ctx.body = { code:200, result: false, message: '用户名或密码错误'}
+        }
+      } else {
+        ctx.body = { code:200, result: false, message: '用户名或密码错误'}
+      }
+    } else {
+      ctx.body = { code: 500, result: false, message: '登录验证失败'}
     }
-  }).catch(error => {
-    ctx.body={ code:500, message:error  }
-  })
+  } catch (error) {
+    ctx.body = { code:500, message: error.message  }
+  }
 })
 
-router.post('/addAddress', async (ctx) => {
+router.post('/addAddress', authController.authUser, async (ctx) => {
   const UserAddress = mongoose.model('UserAddress')
   let addressObject = ctx.request.body;
-  addressObject.userid = '13767477350'
+  addressObject.userid = ctx.session.userId
 
   try {
     if (addressObject.id) {
@@ -106,7 +146,7 @@ router.post('/addAddress', async (ctx) => {
   }
 })
 
-router.post('/delAddress', async (ctx) => {
+router.post('/delAddress', authController.authUser, async (ctx) => {
   const UserAddress = mongoose.model('UserAddress')
   let id = ctx.request.body.id
 
@@ -118,10 +158,10 @@ router.post('/delAddress', async (ctx) => {
   }
 })
 
-router.post('/getUserAddress', async (ctx) => {
+router.post('/getUserAddress', authController.authUser, async (ctx) => {
   const UserAddress = mongoose.model('UserAddress')
   let id = ctx.request.body.id
-  let userid = '13767477350'
+  let userid = ctx.session.userId
 
   try {
     let address
