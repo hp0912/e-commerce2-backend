@@ -1,6 +1,8 @@
 const Koa = require('koa')
-const app = new Koa()
-const {connect, initSchemas} = require('./database/init.js')
+// const session = require("koa-session2")
+// const MongoStore = require("koa-session2-mongo")
+const session = require('koa-session')
+const MongooseStore = require('koa-session-mongoose')
 const views = require('koa-views')
 const json = require('koa-json')
 const onerror = require('koa-onerror')
@@ -8,7 +10,11 @@ const Router = require('koa-router')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 const cors = require('koa2-cors')
+const {connect, initSchemas} = require('./database/init.js')
 
+const app = new Koa()
+
+app.keys = ['Houhou', 'aoaoaowu']
 app.use(cors({
   origin: function (ctx) {
       return "http://127.0.0.1:8080"
@@ -17,8 +23,34 @@ app.use(cors({
   maxAge: 3600,
   credentials: true,
   allowMethods: ['GET', 'POST'],
-  //allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
 }))
+
+;(async () =>{
+  await connect()
+  initSchemas()
+})()
+
+let SESSIONCONFIG = {
+  key: 'SESSION_ID',
+  maxAge: 2 * 60 * 60 * 1000, // cookie有效时长
+  expires: new Date(new Date().getTime() + 2 * 60 * 60 * 1000),  // cookie失效时间
+  path: '/', // 写cookie所在的路径
+  // domain: '', // 写cookie所在的域名
+  httpOnly: true, // 是否只用于http请求中获取
+  overwrite: true,  // 是否允许重写
+  secure: false,
+  // sameSite: '',
+  signed: true,
+  rolling: false,
+  renew: true,
+  store: new MongooseStore({
+    collection: 'appSessions',
+    expires: 2 * 60 * 60
+  })
+}
+
+app.use(session(SESSIONCONFIG, app))
 
 let user = require('./api/user.js')
 let goods = require('./api/goods.js')
@@ -64,10 +96,5 @@ app.use(router.allowedMethods())
 app.on('error', (err, ctx) => {
   console.error('server error', err, ctx)
 });
-
-;(async () =>{
-  await connect()
-  initSchemas()
-})()
 
 module.exports = app
