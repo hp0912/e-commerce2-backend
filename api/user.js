@@ -42,7 +42,7 @@ router.post('/sentVerificationCode',async(ctx)=>{
 
 router.post('/register', async (ctx) => {
   const User = mongoose.model('User')
-  let {userName, password, sms} = ctx.request.body
+  let {userName, password, sms, reset} = ctx.request.body
 
   if (!userName.match(/^[1][34578]\d{9}$/)) {
     ctx.body = {code:500, message: '请输入正确的手机号'}
@@ -53,7 +53,12 @@ router.post('/register', async (ctx) => {
     if ((sms + '-' + userName) === ctx.session.verificationCode) {
       let _user = await User.findOne({userName: userName})
       if (_user) {
-        ctx.body = {code: 500, message: '手机号已被注册'}
+        if (reset) {
+          await _user.update({password})
+          ctx.body = {code: 200, message: '重置成功'}
+        } else {
+          ctx.body = {code: 500, message: '手机号已被注册'}
+        }
       } else {
         let newUser = new User({userName, password})
         await newUser.save()
