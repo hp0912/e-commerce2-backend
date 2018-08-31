@@ -34,11 +34,11 @@ userSchema.pre('update', function(next) {
     if (err) {
       return next(err)
     }
-    bcrypt.hash(this.password, salt, (err,hash) => {
+    bcrypt.hash(this._update.password, salt, (err, hash) => {
       if (err) {
         return next(err)
       }
-      this.password = hash
+      this._update.password = hash
       next()
     })
   })

@@ -55,6 +55,7 @@ router.post('/register', async (ctx) => {
       if (_user) {
         if (reset) {
           await _user.update({password})
+          ctx.session.userId = userName
           ctx.body = {code: 200, message: '重置成功'}
         } else {
           ctx.body = {code: 500, message: '手机号已被注册'}
@@ -69,6 +70,7 @@ router.post('/register', async (ctx) => {
       ctx.body = {code: 500, message: '验证码错误'}
     }
   } catch (error) {
+    console.log(error)
     ctx.body = {code: 500, message: error}
   }
 })
@@ -106,6 +108,15 @@ router.post('/login', async(ctx) => {
     } else {
       ctx.body = { code: 500, result: false, message: '登录验证失败'}
     }
+  } catch (error) {
+    ctx.body = { code:500, message: error.message  }
+  }
+})
+
+router.post('/logout', async(ctx) => {
+  try {
+    ctx.session = {}
+    ctx.body = { code:200, result: true, message: '注销成功'}
   } catch (error) {
     ctx.body = { code:500, message: error.message  }
   }
