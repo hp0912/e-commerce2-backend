@@ -196,4 +196,20 @@ router.post('/getUserAddress', authController.authUser, async (ctx) => {
   }
 })
 
+router.post('/getUserInfo', async (ctx) => {
+  const userModel = mongoose.model('User')
+  let userid = ctx.session.userId
+
+  try {
+    if (!userid) {
+      ctx.body = {status: 200, data: {}, message: '未登录'}
+    } else {
+      let userInfo = await userModel.findOne({userName: userid}, {UserId: 0, password: 0, createAt: 0, lastLoginAt: 0, __v: 0})
+      ctx.body = {status: 200, data: userInfo, message: '获取用户信息成功'}
+    }
+  } catch (error) {
+    ctx.body = {status: 500, message: error}
+  }
+})
+
 module.exports = router
