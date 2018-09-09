@@ -7,7 +7,9 @@ const SALT_WORK_FACTOR = 10
 const userSchema = new Schema({
   UserId: ObjectId,
   userName: {unique: true, type: String},
+  nickname: String,
   password: String,
+  avatar: {type: String, default: 'https://img.aoaoaowu.com/images/default-avatar.png'},
   createAt: {type: Date, default: Date.now()},
   lastLoginAt: {type: Date, default: Date.now()}
 }, {
@@ -30,18 +32,22 @@ userSchema.pre('save', function(next) {
 })
 
 userSchema.pre('update', function(next) {
-  bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
-    if (err) {
-      return next(err)
-    }
-    bcrypt.hash(this._update.password, salt, (err, hash) => {
+  if (this._update.password) {
+    bcrypt.genSalt(SALT_WORK_FACTOR, (err, salt) => {
       if (err) {
         return next(err)
       }
-      this._update.password = hash
-      next()
+      bcrypt.hash(this._update.password, salt, (err, hash) => {
+        if (err) {
+          return next(err)
+        }
+        this._update.password = hash
+        next()
+      })
     })
-  })
+  } else {
+    next()
+  }
 })
 
 userSchema.methods = {

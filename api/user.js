@@ -61,7 +61,7 @@ router.post('/register', async (ctx) => {
           ctx.body = {code: 500, message: '手机号已被注册'}
         }
       } else {
-        let newUser = new User({userName, password})
+        let newUser = new User({userName, password, nickname: 'houhou-' + userName})
         await newUser.save()
         ctx.session.userId = userName
         ctx.body = {code: 200, message: '注册成功'}
@@ -124,7 +124,7 @@ router.post('/logout', async(ctx) => {
 
 router.post('/addAddress', authController.authUser, async (ctx) => {
   const UserAddress = mongoose.model('UserAddress')
-  let addressObject = ctx.request.body;
+  let addressObject = ctx.request.body
   addressObject.userid = ctx.session.userId
 
   try {
@@ -209,6 +209,30 @@ router.post('/getUserInfo', async (ctx) => {
     }
   } catch (error) {
     ctx.body = {status: 500, message: error}
+  }
+})
+
+router.post('/updateUser', authController.authUser, async (ctx) => {
+  const userModel = mongoose.model('User')
+  let userid = ctx.session.userId
+  let userInfo = ctx.request.body
+
+  try {
+    await userModel.update({userName: userid}, {nickname: userInfo.nickname})
+    ctx.body = {status: 200, message: '更新成功'}
+  } catch (error) {
+    ctx.body = {status: 500, message: error.message}
+  }
+})
+
+router.post('/uploadToken', authController.authUser, async (ctx) => {
+  let userid = ctx.session.userId
+  let userInfo = ctx.request.body
+
+  try {
+    
+  } catch (error) {
+    ctx.body = {status: 500, message: error.message}
   }
 })
 
