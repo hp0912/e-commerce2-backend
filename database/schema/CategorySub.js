@@ -7,6 +7,8 @@ const categorySubSchema = new Schema({
   MALL_SUB_NAME:{type:String},
   COMMENTS:{type:String},
   SORT:{type:Number}
+}, {
+  collection: 'CategorySub'
 })
 
 mongoose.model('CategorySub',categorySubSchema)

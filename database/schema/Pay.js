@@ -10,6 +10,8 @@ const paySchema = new Schema({
     method: String, // 支付方式: 扫码或者调起APP
     code: Number, // 支付状态码
     createTime: {type:Date, default: new Date()}
+}, {
+    collections: 'Pay'
 })
 
 mongoose.model('Pay', paySchema)

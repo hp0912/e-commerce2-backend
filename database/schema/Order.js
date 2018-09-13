@@ -23,6 +23,8 @@ const orderSchema = new Schema({
     createTimeTimestamp: {type: String},
     payRemainTime: String,
     hasComment: {type: Boolean, default: false}
+}, {
+  collections: 'Order'
 })
 
 mongoose.model('Order',orderSchema)
