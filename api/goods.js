@@ -2,6 +2,16 @@ const Router = require ('koa-router')
 let router = new Router()
 const mongoose = require('mongoose')
 
+router.post('/getIndexGoodsInfo',async(ctx) => {
+    try{
+        const Index = mongoose.model('Index')
+        let result = await Index.findOne({}, {_id: 0}).exec()
+        ctx.body={code: 200, message: '成功', data: result.data}
+    }catch (err) {
+        ctx.body={code: 500, message: err}
+    }
+})
+
 router.post('/getDetailGoodsInfo',async(ctx) => {
     try{
         let goodsId = ctx.request.body.goodsId

@@ -58,7 +58,6 @@ module.exports = class BaseClass {
   async getLocation(ip) {
     const ipArr = ip.split(':')
     ip = ipArr[ipArr.length - 1]
-    ip = '14.153.239.88'
 
     try {
       let result
