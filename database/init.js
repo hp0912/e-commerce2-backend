@@ -18,7 +18,7 @@ exports.connect = () => {
         maxConnectTimes++
         mongoose.connect(config.DB_URL, {useNewUrlParser: true})
       } else {
-        reject(err)
+        reject()
         throw new Error('数据库错误')
       }
     })
