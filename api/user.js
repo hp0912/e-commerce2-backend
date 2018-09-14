@@ -9,11 +9,11 @@ let router = new Router()
 const sdk = new CaptchaSDK(config.dxAppID, config.dxAppSecret)
 
 router.post('/sentVerificationCode',async(ctx)=>{
-  let appid = 1400009099
-  let appkey = "9ff91d87c2cd7cd0ea762f141975d1df37481d48700d70ac37470aefc60f9bad"
+  let appid = config.smsappid
+  let appkey = config.smsappkey
   let phoneNumbers = [ctx.request.body.tel]
-  let templateId = 7839
-  let smsSign = "腾讯云"
+  let templateId = 191869
+  let smsSign = "嗷呜的个人主页"
   let sms = QcloudSms(appid, appkey)
   let verificationCode = (Math.random() + '').substr(2, 6)
   let ssender = sms.SmsSingleSender()

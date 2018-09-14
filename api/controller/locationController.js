@@ -26,8 +26,8 @@ class locationController extends BaseClass {
     //定位当前位置
     async location(ctx) {
         try {
-            console.log(ctx.request.ip)
-            let result = await this.getLocation(ctx.request.ip)
+            console.log('---------IP:' + ctx.headers["x-real-ip"] + '----------')
+            let result = await this.getLocation(ctx.headers["x-real-ip"])
             let data = await this.getDetailPosition(result)
             ctx.body={status: 200, message: '获取位置信息成功', data: data}
         } catch (err) {
