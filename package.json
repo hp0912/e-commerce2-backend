@@ -11,6 +11,7 @@
   "dependencies": {
     "bcrypt": "^2.0.1",
     "blueimp-md5": "^2.10.0",
+    "crypto": "^1.0.1",
     "debug": "^2.6.3",
     "dx-captcha-sdk": "^0.1.0",
     "glob": "^7.1.2",

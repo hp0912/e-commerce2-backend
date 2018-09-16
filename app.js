@@ -49,8 +49,8 @@ let SESSIONCONFIG = {
     },
     async get (id) {
       const sessionModel = mongoose.model('Sessions')
-      const { data } = await sessionModel.findById(id)
-      return data
+      const session = await sessionModel.findById(id)
+      return session && session.data || {}
     },
     async set (id, data, maxAge, { changed, rolling }) {
       if (changed || rolling) {

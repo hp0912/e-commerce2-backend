@@ -4,6 +4,7 @@ const CaptchaSDK = require('dx-captcha-sdk')
 const QcloudSms = require("qcloudsms_js")
 const config = require('../config')
 const authController = require('./controller/authController')
+const qcloudAuthorization = require('../base/qcloudAuthorization.js')
 
 let router = new Router()
 const sdk = new CaptchaSDK(config.dxAppID, config.dxAppSecret)
@@ -226,11 +227,9 @@ router.post('/updateUser', authController.authUser, async (ctx) => {
 })
 
 router.post('/uploadToken', authController.authUser, async (ctx) => {
-  let userid = ctx.session.userId
-  let userInfo = ctx.request.body
-
   try {
-    
+    let tempKeys = await qcloudAuthorization.getTempKeys()
+    ctx.body = {status: 200, message: '获取签名成功', tempKeys: tempKeys.data}
   } catch (error) {
     ctx.body = {status: 500, message: error.message}
   }
