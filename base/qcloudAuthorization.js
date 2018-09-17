@@ -12,7 +12,7 @@ class QcloudAuthorization {
     this.SecretKey = config.qcloudSecretKey
     this.Bucket = config.qcloudBucket
     this.Region = 'ap-guangzhou'
-    this.AllowPrefix = 'ECUserAvatar/'
+    this.AllowPrefix = 'ECUserAvatar/*'
   }
 
   getRandom (min, max) {
