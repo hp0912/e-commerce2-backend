@@ -226,6 +226,25 @@ router.post('/updateUser', authController.authUser, async (ctx) => {
   }
 })
 
+router.post('/changeAvatar', authController.authUser, async (ctx) => {
+  const userModel = mongoose.model('User')
+  let userid = ctx.session.userId
+  let avatar = ctx.request.body.avatar || ''
+
+  try {
+    if (!avatar.match(/^ECUserAvatar\//)) {
+      ctx.body = {status: 500, message: '数据不合法'}
+    } else {
+      avatar = avatar.replace(/[^a-zA-z0-9\/\.]/g, '')
+      let url = 'https://img.aoaoaowu.com/' + avatar
+      await userModel.update({userName: userid}, {avatar: url})
+      ctx.body = {status: 200, message: '更新成功', data: {url}}
+    }
+  } catch (error) {
+    ctx.body = {status: 500, message: error.message}
+  }
+})
+
 router.post('/uploadToken', authController.authUser, async (ctx) => {
   try {
     let tempKeys = await qcloudAuthorization.getTempKeys()
