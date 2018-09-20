@@ -6,5 +6,8 @@ let router = new Router()
 
 router.post("/generateOrder", authController.authUser, orderController.generateOrder)
 router.get('/getOrderInfo/:orderId', authController.authUser, orderController.getOrderInfo)
+router.post("/pendingPayment", authController.authUser, orderController.pendingPayment)
+router.post("/cancelOrder", authController.authUser, orderController.cancelOrder)
+router.post("/pendingDeliver", authController.authUser, orderController.pendingDeliver)
 
 module.exports = router

@@ -2,6 +2,8 @@ const md5 = require('blueimp-md5')
 const BaseClass = require('../../base/base.js')
 const mongoose = require('mongoose')
 const config = require('../../config')
+const fetch = require('node-fetch')
+const FormData = require('form-data')
 
 class payController extends BaseClass {
   constructor() {
@@ -13,7 +15,7 @@ class payController extends BaseClass {
   }
 
   async pay (ctx) {
-    let {orderId, payType = '1', method = 'trpay.trade.create.wap'} = ctx.request.body
+    let {orderId, payType = '1', method = 'trpay.trade.create.scan'} = ctx.request.body
     if (!orderId) {
       ctx.body = {status: -1, message: '初始化支付失败参数有误'}
       return
@@ -43,11 +45,25 @@ class payController extends BaseClass {
         timestamp: new Date().getTime() + '',
         version: '1.0'
       }
-      payData.synNotifyUrl = `${config.synNotifyUrl}/#/orderDetail?id=${orderId}` // 客户端同步跳转
-      let sign = this.sign(payData)
-      payData['sign'] = sign
-      await this.savePayData({method: 'wap', orderId, payUserId, payType, code: 0})
-      ctx.body = {status: 200, message: '支付初始化成功', data: payData}
+
+      let sign = ''
+      if (method === 'trpay.trade.create.scan') {
+        sign = this.sign(payData)
+        payData['sign'] = sign
+        let result = await this.scanPay(ctx, payData)
+        if (result.code !== '0000') {
+          ctx.body = {status: -1, message: '支付接口出错，请更改支付方式'}
+          return
+        }
+        await this.savePayData({method: 'scan', orderId, payUserId, payType})
+        ctx.body = {status: 1, message: '获取二维码成功，请扫码支付', data: {...result, ...payData, orderId}}
+      } else {
+        payData.synNotifyUrl = `${config.synNotifyUrl}/#/orderDetail?id=${orderId}` // 客户端同步跳转
+        sign = this.sign(payData)
+        payData['sign'] = sign
+        await this.savePayData({method: 'wap', orderId, payUserId, payType, code: 0})
+        ctx.body = {status: 200, message: '支付初始化成功', data: payData}
+      }
     } catch (err) {
       console.log(err.message)
       ctx.body = {status: -1, message: '初始化支付失败'}
@@ -80,6 +96,18 @@ class payController extends BaseClass {
     }
   }
 
+  async scanPay(ctx, payData) {
+    let formData = new FormData()
+    for (let key in payData) {
+      formData.append(key, payData[key])
+    }
+    let result = await fetch('https://pay.trsoft.xin/order/trpayGetWay', {
+      method: 'POST',
+      body: formData
+    })
+    return result = await result.json()
+  }
+
   // 生成签名
   sign (payData) {
     let keys = Object.keys(payData)
@@ -103,6 +131,22 @@ class payController extends BaseClass {
     }
     let initPay = new payModel(saveDB)
     await initPay.save()
+  }
+
+  async queryPayStatus (ctx) {
+    let orderId = ctx.request.body.outTradeNo
+    try {
+      let payModel = mongoose.model('Pay')
+      let pay = await payModel.findOne({orderId})
+      if (pay.code === 200) {
+        ctx.body = {status: 200, message: '支付完成'}
+      } else {
+        ctx.body = {status: -1, message: '未支付'}
+      }
+    } catch (err) {
+      console.log('监听扫码状态失败', err.message)
+      ctx.body = {status: -1, message: '支付接口异常'}
+    }
   }
 }
 

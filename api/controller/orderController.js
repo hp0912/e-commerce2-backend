@@ -36,6 +36,7 @@ class orderController extends BaseClass {
         remark: '',
         status: '未支付',
         code: 0,
+        createTime: new Date(),
         createTimeTimestamp: Math.floor(new Date().getTime() / 1000)
       }
       let order = new orderModel(orderData)
@@ -47,7 +48,7 @@ class orderController extends BaseClass {
     }
   }
 
-  async getOrderInfo(ctx) {
+  async getOrderInfo (ctx) {
     const orderId = ctx.params.orderId
     if (!orderId) {
       ctx.body = {status: -1, message: '获取指定订单失败，参数有误'}
@@ -66,6 +67,59 @@ class orderController extends BaseClass {
     } catch (error) {
       console.log(error.message)
       ctx.body = {status: -1, message: '获取指定订单失败'}
+    }
+  }
+
+  async pendingPayment (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let queryTime = new Date(new Date().getTime() - 15 * 60 * 1000)
+      let page = ctx.request.body.page || 1
+      let num = 10 //每页显示数量
+      let start = (page - 1) * num
+      const orderModel = mongoose.model('Order')
+
+      let order = await orderModel.find({userId, code: 0, createTime: {"$gt": queryTime}}).skip(start).limit(num)
+
+      ctx.body = {status: 200, message: '获取订单成功', data: order}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '获取订单失败'}
+    }
+  }
+
+  async cancelOrder (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let orderId = ctx.request.body.orderId
+      const orderModel = mongoose.model('Order')
+
+      let order = await orderModel.findOne({userId, orderId, code: 0})
+      if (order) {
+        await order.update({createTime: new Date(0), createTimeTimestamp: 0})
+      }
+
+      ctx.body = {status: 200, message: '订单取消成功'}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '订单取消失败'}
+    }
+  }
+
+  async pendingDeliver (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let page = ctx.request.body.page || 1
+      let num = 10 //每页显示数量
+      let start = (page - 1) * num
+      const orderModel = mongoose.model('Order')
+
+      let order = await orderModel.find({userId, code: 200}).skip(start).limit(num)
+
+      ctx.body = {status: 200, message: '获取订单成功', data: order}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '获取订单失败'}
     }
   }
 

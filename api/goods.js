@@ -67,7 +67,7 @@ router.post('/searchGoods', async(ctx) => {
         let start = (page - 1) * num
         const Goods = mongoose.model('Goods')
         const reg = new RegExp(keyword, 'i')
-        let result = await Goods.find({'NAME': reg}).skip(start) .limit(num).exec()
+        let result = await Goods.find({'NAME': reg}).skip(start).limit(num).exec()
 
         ctx.body = {code: 200, message: result}
     } catch(err) {
