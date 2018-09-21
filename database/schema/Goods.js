@@ -28,7 +28,7 @@ const goodsSchema = new Schema({
   IS_RECOMMEND: Number,
   PICTURE_COMPERSS_PATH: String
 },{
-  collections: 'Goods'
+  collection: 'Goods'
 })
  
 mongoose.model('Goods',goodsSchema)

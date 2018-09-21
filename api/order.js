@@ -9,5 +9,8 @@ router.get('/getOrderInfo/:orderId', authController.authUser, orderController.ge
 router.post("/pendingPayment", authController.authUser, orderController.pendingPayment)
 router.post("/cancelOrder", authController.authUser, orderController.cancelOrder)
 router.post("/pendingDeliver", authController.authUser, orderController.pendingDeliver)
+router.post("/confirmReceipt", authController.authUser, orderController.confirmReceipt) // 确认收货
+router.post("/pendingEvaluate", authController.authUser, orderController.pendingEvaluate) // 待评价
+router.post("/submitComment", authController.authUser, orderController.submitComment) // 提交评价
 
 module.exports = router

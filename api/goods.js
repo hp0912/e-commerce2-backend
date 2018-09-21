@@ -23,6 +23,23 @@ router.post('/getDetailGoodsInfo',async(ctx) => {
     }
 })
 
+router.post('/getGoodsComments',async(ctx) => {
+    try{
+        let goodsId = ctx.request.body.goodsId
+        let page = ctx.request.body.page || 1
+        let num = 10 //每页显示数量
+        let start = (page - 1) * num
+        const goodsCommentModel = mongoose.model('GoodsComment')
+
+        // 按评价日期降序排列 _id, userId, orderId, __v字段不显示
+        let result = await goodsCommentModel.find({goodsId}, {_id: 0, userId: 0, orderId: 0, __v: 0}).sort({createTime: 'desc'}).skip(start).limit(num)
+
+        ctx.body={code: 200, message: '获取商品评价成功', data: result}
+    }catch (err) {
+        ctx.body={code: 500, message: err}
+    }
+})
+
 router.get('/getCategoryList',async(ctx) => {
     try{
         const Category = mongoose.model('Category')

@@ -114,12 +114,89 @@ class orderController extends BaseClass {
       let start = (page - 1) * num
       const orderModel = mongoose.model('Order')
 
-      let order = await orderModel.find({userId, code: 200}).skip(start).limit(num)
+      let order = await orderModel.find({userId, code: 200, confirmReceipt: false}).skip(start).limit(num)
 
       ctx.body = {status: 200, message: '获取订单成功', data: order}
     } catch (error) {
       console.log(error.message)
       ctx.body = {status: -1, message: '获取订单失败'}
+    }
+  }
+
+  async confirmReceipt (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let orderId = ctx.request.body.orderId
+      const orderModel = mongoose.model('Order')
+
+      let order = await orderModel.findOne({userId, orderId, confirmReceipt: false})
+      if (order) {
+        await order.update({confirmReceipt: true})
+      }
+
+      ctx.body = {status: 200, message: '已确认收货'}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '内部服务器错误'}
+    }
+  }
+
+  async pendingEvaluate (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let page = ctx.request.body.page || 1
+      let num = 10 //每页显示数量
+      let start = (page - 1) * num
+      const orderModel = mongoose.model('Order')
+
+      let order = await orderModel.find({userId, code: 200, confirmReceipt: true, hasComment: false}).skip(start).limit(num)
+
+      ctx.body = {status: 200, message: '获取订单成功', data: order}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '获取订单失败'}
+    }
+  }
+
+  async submitComment (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let commentData = ctx.request.body.commentData
+      let orderId = commentData.orderId
+      const orderModel = mongoose.model('Order')
+      const userModel = mongoose.model('User')
+      const goodsCommentModel = mongoose.model('GoodsComment')
+
+      let order = await orderModel.findOne({orderId, userId, code: 200, confirmReceipt: true, hasComment: false})
+      let user = await userModel.findOne({userName: userId})
+
+      if (order) {
+        let comments = []
+        order.goods.forEach((goods, index) => {
+          let comment = {
+            goodsId: goods.goodsId,
+            orderId: order.orderId,
+            userId,
+            userAvatar: user.avatar,
+            nickname: user.nickname,
+            rate: commentData.comment[goods.goodsId].rate || 0,
+            comment: commentData.comment[goods.goodsId].comment || ''
+          }
+          comments.push(comment)
+        })
+        
+        let promiseArr = []
+        promiseArr.push(goodsCommentModel.insertMany(comments))
+        promiseArr.push(order.update({hasComment: true}))
+        
+        await Promise.all(promiseArr)
+        ctx.body = {status: 200, message: '提交评论成功'}
+      } else {
+        ctx.body = {status: 500, message: '订单参数错误'}
+      }
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '提交评论失败'}
     }
   }
 

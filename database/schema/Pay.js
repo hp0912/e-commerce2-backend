@@ -11,7 +11,7 @@ const paySchema = new Schema({
     code: Number, // 支付状态码
     createTime: {type:Date, default: new Date()}
 }, {
-    collections: 'Pay'
+    collection: 'Pay'
 })
 
 mongoose.model('Pay', paySchema)

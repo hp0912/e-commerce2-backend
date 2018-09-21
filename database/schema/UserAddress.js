@@ -16,7 +16,7 @@ const UserAddressSchema = new Schema({
   isDefault: Boolean,
   createAt: {type: Date, default:Date.now()}
 }, {
-  collections: 'UserAddress'
+  collection: 'UserAddress'
 })
 
 mongoose.model('UserAddress', UserAddressSchema)

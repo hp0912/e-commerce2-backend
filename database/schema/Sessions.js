@@ -10,7 +10,7 @@ const SessionsSchema = new Schema({
     type: Date
   }
 }, {
-  collections: 'Sessions'
+  collection: 'Sessions'
 })
 
 mongoose.model('Sessions', SessionsSchema)
