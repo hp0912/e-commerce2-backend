@@ -203,6 +203,12 @@ class orderController extends BaseClass {
   async getQtyOfOrder (ctx) {
     try {
       let userId = ctx.session.userId
+
+      if (!userId) {
+        ctx.body = {status: 200, message: '获取订单数量成功', data: {count1: 0, count2: 0, count3: 0, count4: 0}}
+        return
+      }
+
       let queryTime = new Date(new Date().getTime() - 15 * 60 * 1000)
       const orderModel = mongoose.model('Order')
 
