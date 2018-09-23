@@ -200,6 +200,66 @@ class orderController extends BaseClass {
     }
   }
 
+  async getQtyOfOrder (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let queryTime = new Date(new Date().getTime() - 15 * 60 * 1000)
+      const orderModel = mongoose.model('Order')
+
+      let count1 = orderModel.count({userId, code: 0, createTime: {"$gt": queryTime}}) // 待支付订单数量
+      let count2 = 0 // 待发货订单数量, 平台自动发货
+      let count3 = orderModel.count({userId, code: 200, confirmReceipt: false}) // 待收货订单数量
+      let count4 = orderModel.count({userId, code: 200, confirmReceipt: true, hasComment: false}) // 待评价订单数量
+
+      let result = await Promise.all([count1, count2, count3, count4])
+      let orderQty = {
+        count1: result[0],
+        count2: result[1],
+        count3: result[2],
+        count4: result[3]
+      }
+      ctx.body = {status: 200, message: '获取订单数量成功', data: orderQty}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '获取订单数量失败'}
+    }
+  }
+
+  async expiredOrder (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let queryTime = new Date(new Date().getTime() - 15 * 60 * 1000)
+      let page = ctx.request.body.page || 1
+      let num = 10 //每页显示数量
+      let start = (page - 1) * num
+      const orderModel = mongoose.model('Order')
+
+      let order = await orderModel.find({userId, code: 0, createTime: {"$lt": queryTime}}).skip(start).limit(num)
+
+      ctx.body = {status: 200, message: '获取订单成功', data: order}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '获取订单失败'}
+    }
+  }
+
+  async completedOrder (ctx) {
+    try {
+      let userId = ctx.session.userId
+      let page = ctx.request.body.page || 1
+      let num = 10 //每页显示数量
+      let start = (page - 1) * num
+      const orderModel = mongoose.model('Order')
+
+      let order = await orderModel.find({userId, code: 200, confirmReceipt: true, hasComment: true}).skip(start).limit(num)
+
+      ctx.body = {status: 200, message: '获取订单成功', data: order}
+    } catch (error) {
+      console.log(error.message)
+      ctx.body = {status: -1, message: '获取订单失败'}
+    }
+  }
+
   async computeTotalPrice (goods) {
     let totalPrice = 0, orderGoods = []
 
